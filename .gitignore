@@ -1,0 +1,28 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Build output
+MasanielloApp/publish/
+
+## Temp
+.inspect/
+
+## IDE
+.vs/
+.vscode/
+*.DotSettings.user
+*.rsuser
+
+## OS
+Thumbs.db
+Desktop.ini
+*.lnk
+
+## Secrets
+*.pfx
+*.snk

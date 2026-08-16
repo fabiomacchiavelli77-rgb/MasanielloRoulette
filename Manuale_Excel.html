@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Manuale Masaniello Roulette – Excel</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11pt; color: #1a1a1a; line-height: 1.5; max-width: 180mm; margin: auto; }
+  h1 { color: #1a5c2a; font-size: 22pt; border-bottom: 3px solid #1a5c2a; padding-bottom: 6px; }
+  h2 { color: #1a5c2a; font-size: 15pt; margin-top: 26px; border-bottom: 1px solid #bbb; padding-bottom: 3px; }
+  h3 { color: #2d7a3e; font-size: 12pt; margin-top: 18px; }
+  .sub { color: #555; font-size: 12pt; margin-top: -8px; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 10pt; }
+  th { background: #1a5c2a; color: white; padding: 6px 8px; text-align: left; }
+  td { border: 1px solid #ccc; padding: 5px 8px; }
+  tr:nth-child(even) td { background: #f2f7f3; }
+  .box { background: #eef6ef; border-left: 4px solid #1a5c2a; padding: 10px 14px; margin: 12px 0; }
+  .warn { background: #fdf3e3; border-left: 4px solid #d88c00; padding: 10px 14px; margin: 12px 0; }
+  .danger { background: #fdeaea; border-left: 4px solid #c0392b; padding: 10px 14px; margin: 12px 0; }
+  code, .cell { background: #eee; padding: 1px 5px; border-radius: 3px; font-family: Consolas, monospace; font-size: 10pt; }
+  .btn { background: #1a5c2a; color: white; padding: 2px 8px; border-radius: 4px; font-size: 9.5pt; font-weight: bold; white-space: nowrap; }
+  li { margin: 3px 0; }
+  .footer { margin-top: 30px; color: #777; font-size: 9pt; border-top: 1px solid #ccc; padding-top: 8px; }
+  .pagebreak { page-break-before: always; }
+</style>
+</head>
+<body>
+
+<h1>Masaniello Roulette – Manuale Excel</h1>
+<p class="sub">Guida all'uso di <b>Masaniello_v2.xlsm</b> · giugno 2026</p>
+
+<h2>1. Che cos'è</h2>
+<p>Il file Excel applica la progressione <b>Masaniello</b> alla roulette europea con la copertura
+<b>2 dozzine + 1 sestina</b>: si punta su 30 numeri su 37 (probabilità di vincere il colpo: 81,1%)
+e ogni colpo vinto rende esattamente <b>+20%</b> della puntata. Il Masaniello calcola colpo per colpo
+quanto puntare per raggiungere l'obiettivo di <b>W colpi vinti su M giocati</b>.</p>
+
+<div class="box"><b>Come funziona la copertura.</b> La puntata viene divisa in 5 parti:
+2 sulla Dozzina 1 (1-12), 2 sulla Dozzina 2 (13-24), 1 sulla sestina scelta (25-30 oppure 31-36).
+La dozzina paga 2:1 e la sestina 5:1: qualunque numero coperto esca, l'incasso è identico
+(6 parti su 5 puntate = +20%). Restano scoperti lo zero e i 6 numeri della sestina opposta.</div>
+
+<h2>2. Primo avvio</h2>
+<ol>
+<li>Apri <b>Masaniello_v2.xlsm</b> e <b>abilita le macro</b> quando Excel lo chiede.</li>
+<li>Se Excel blocca il file (scaricato da internet): tasto destro sul file → Proprietà → spunta <i>Annulla blocco</i>.</li>
+<li>I pulsanti sono già presenti nel foglio <b>Dashboard</b>. Se mancassero: premi <code>Alt+F8</code>,
+scegli <code>SetupButtons</code> ed esegui.</li>
+</ol>
+
+<h2>3. I fogli</h2>
+<table>
+<tr><th>Foglio</th><th>A cosa serve</th></tr>
+<tr><td><b>Config</b></td><td>Tutti i parametri (vedi capitolo 4)</td></tr>
+<tr><td><b>Dashboard</b></td><td>Comandi e stato della sessione: pulsanti, bankroll, puntata consigliata con ripartizione</td></tr>
+<tr><td><b>Session</b></td><td>Storico colpo per colpo della sessione corrente (numero, esito, puntata, ripartizione, cassa, fonte)</td></tr>
+<tr><td><b>Storico</b></td><td>Una riga per ogni sessione chiusa (VINTA / PERSA / INTERROTTA) con profitto e ROI. Da qui il rollover legge la cassa</td></tr>
+<tr><td><b>MonteCarlo</b></td><td>Simulazione di migliaia di sessioni per valutare i parametri</td></tr>
+</table>
+
+<h2>4. Configurazione (foglio Config)</h2>
+<table>
+<tr><th>Cella</th><th>Parametro</th><th>Note</th></tr>
+<tr><td class="cell">B4</td><td>Colpi totali M</td><td>es. 20</td></tr>
+<tr><td class="cell">B5</td><td>Vittorie obiettivo W</td><td>es. 13 · vedi capitolo 9 per la scelta</td></tr>
+<tr><td class="cell">B6</td><td>Bankroll iniziale (€)</td><td>usato solo se non c'è rollover o lo Storico è vuoto</td></tr>
+<tr><td class="cell">B7</td><td>Chip minimo (€)</td><td>il valore del gettone, es. 0,10 — <b>più è piccolo, meglio il piano viene seguito</b></td></tr>
+<tr><td class="cell">B8</td><td>Tetto puntata %</td><td>compilato automaticamente dalla modalità</td></tr>
+<tr><td class="cell">B9</td><td>Sestina</td><td>25 (= 25-30) oppure 31 (= 31-36)</td></tr>
+<tr><td class="cell">B10</td><td>Quota</td><td>lasciare 1,2 (è la quota reale della copertura)</td></tr>
+<tr><td class="cell">B11</td><td>Modalità rischio</td><td>Prudente (3%), Intermedia (7%), Aggressiva (15%), Ultra (100% = Masaniello puro)</td></tr>
+<tr><td class="cell">B12</td><td>Rollover cassa</td><td>SI = la nuova sessione riparte dall'ultimo bank finale in Storico; NO = sempre da B6</td></tr>
+<tr><td class="cell">B13</td><td>Random</td><td>REALISTICO = sempre diverso · UNIFORME = sequenza riproducibile (per test)</td></tr>
+</table>
+
+<h2>5. Giocare una sessione</h2>
+<ol>
+<li>Premi <span class="btn">NUOVA SESSIONE</span>: la Dashboard mostra stato IN CORSO, la cassa
+e la <b>puntata consigliata già ripartita</b> (quanto su ogni dozzina e sulla sestina).</li>
+<li>Piazza le puntate al tavolo esattamente come indicato.</li>
+<li>Quando esce il numero, premi <span class="btn">AGGIUNGI NUMERO</span> e inseriscilo (0-36).</li>
+<li>Il file aggiorna cassa, contatori e calcola la puntata successiva. Ripeti dal punto 2.</li>
+<li>La sessione termina da sola: <b>VINTA</b> (raggiunte W vittorie), <b>PERSA</b> (colpi esauriti,
+obiettivo non più raggiungibile o cassa sotto la puntata minima). Viene scritta una riga in Storico.</li>
+</ol>
+<div class="box"><b>Esempio di ripartizione.</b> Puntata consigliata 7,50 € con chip da 0,50 €
+(15 chip = 3 unità): 3,00 € su Dozzina 1 · 3,00 € su Dozzina 2 · 1,50 € sulla sestina.
+Se esce un numero coperto incassi 9,00 € → +1,50 € (+20%).</div>
+<p>Le puntate sono sempre multipli di <b>5 chip</b>: è la quantità minima che copre i tre gruppi
+nelle proporzioni giuste. Se chiudi e riapri il file a sessione aperta puoi continuare normalmente.</p>
+
+<h2>6. Pulsante SIMULA RANDOM</h2>
+<p><span class="btn">SIMULA RANDOM</span> estrae un numero casuale 0-36 (roulette europea, uniforme,
+nessun sistema predittivo) e lo gioca con lo stesso identico flusso del numero manuale.
+Serve per provare il sistema senza essere al tavolo: i colpi simulati sono marcati
+<code>RANDOM</code> nella colonna Fonte del foglio Session.</p>
+
+<h2>7. Rollover e Storico</h2>
+<p>Con B12 = SI, ogni <span class="btn">NUOVA SESSIONE</span> riparte dal <b>bank finale dell'ultima
+riga dello Storico</b>: la cassa "viaggia" di sessione in sessione. Se premi NUOVA SESSIONE con una
+sessione ancora aperta, quella viene archiviata come INTERROTTA al bank corrente.
+Per ripartire dal bankroll di Config: metti B12 = NO, oppure svuota le righe dello Storico.</p>
+
+<h2 class="pagebreak">8. MonteCarlo (foglio MonteCarlo)</h2>
+<ol>
+<li><b>B3</b>: numero di sessioni da simulare (default 10.000).</li>
+<li><b>B4</b>: <code>INDIPENDENTE</code> (ogni sessione riparte dal bankroll di Config: statistiche pulite)
+oppure <code>ROLLOVER</code> (la cassa evolve di sessione in sessione; si ferma se va in bancarotta).</li>
+<li>Premi <span class="btn">AVVIA MONTECARLO</span> e attendi qualche secondo.</li>
+</ol>
+<p>Risultati: % sessioni vincenti, profitto medio/massimo, perdita massima, drawdown medio/massimo,
+ROI medio, più la tabella sessione per sessione. Usa il MonteCarlo <b>prima</b> di giocare
+parametri nuovi: ti dice cosa aspettarti davvero.</p>
+
+<h2>9. Scegliere M e W</h2>
+<p>Più W è alto rispetto a M, più il target è ambizioso (e rischioso). Obiettivi teorici su 20 colpi:</p>
+<table>
+<tr><th>M/W</th><th>Obiettivo sessione</th><th>Carattere</th></tr>
+<tr><td>20/13</td><td>+1,14%</td><td>quasi sempre vinta, guadagno minimo</td></tr>
+<tr><td>20/14</td><td>+3,86%</td><td>molto difensivo</td></tr>
+<tr><td>20/15</td><td>+11,34%</td><td>equilibrato</td></tr>
+<tr><td>20/16</td><td>+30,08%</td><td>ambizioso</td></tr>
+<tr><td>20/17</td><td>+76,51%</td><td>aggressivo</td></tr>
+</table>
+<div class="warn"><b>Trappola della puntata minima.</b> Con obiettivi piccoli (es. 20/13) il piano
+chiede puntate minuscole; se il chip è grande rispetto alla cassa, la puntata minima (5 chip)
+"schiaccia" il piano e di fatto giochi una puntata fissa che paga solo il margine del banco.
+Regola pratica: <b>chip piccolo</b> (es. 0,10 € su cassa 100 €) e/o <b>W con target almeno +10%</b>.</div>
+
+<h2>10. Avvertenze importanti</h2>
+<div class="danger">
+<p><b>Nessun sistema batte la roulette.</b> Su ogni puntata il banco trattiene in media il
+<b>2,70%</b> (effetto dello zero e dei numeri scoperti) ed è matematicamente identico con qualunque
+copertura. Il Masaniello è uno strumento di <b>disciplina e gestione del rischio</b>: vinci spesso
+poco e raramente perdi tanto — il valore atteso resta negativo, come mostra il MonteCarlo.</p>
+<p><b>Gioca solo denaro che puoi permetterti di perdere.</b> Se il gioco diventa un problema:
+Telefono Verde Nazionale per le problematiche legate al Gioco d'Azzardo <b>800 558 822</b>.</p>
+</div>
+
+<h2>11. Problemi comuni</h2>
+<table>
+<tr><th>Problema</th><th>Soluzione</th></tr>
+<tr><td>I pulsanti non ci sono</td><td><code>Alt+F8</code> → esegui <code>SetupButtons</code></td></tr>
+<tr><td>Le macro non si attivano</td><td>Proprietà del file → Annulla blocco; oppure File → Opzioni → Centro protezione</td></tr>
+<tr><td>"Puntata consigliata = 0"</td><td>La sessione è terminata o la cassa è insufficiente: premi NUOVA SESSIONE</td></tr>
+<tr><td>Voglio azzerare la cassa</td><td>Config B12 = NO (o svuota lo Storico), poi NUOVA SESSIONE</td></tr>
+</table>
+
+<p class="footer">Masaniello Roulette · Manuale Excel v2 · giugno 2026 · Solo per uso personale e ricreativo.</p>
+</body>
+</html>

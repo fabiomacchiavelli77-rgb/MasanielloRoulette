@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Manuale Masaniello Roulette – App Desktop</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11pt; color: #1a1a1a; line-height: 1.5; max-width: 180mm; margin: auto; }
+  h1 { color: #14406b; font-size: 22pt; border-bottom: 3px solid #14406b; padding-bottom: 6px; }
+  h2 { color: #14406b; font-size: 15pt; margin-top: 26px; border-bottom: 1px solid #bbb; padding-bottom: 3px; }
+  h3 { color: #1d5fa0; font-size: 12pt; margin-top: 18px; }
+  .sub { color: #555; font-size: 12pt; margin-top: -8px; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 10pt; }
+  th { background: #14406b; color: white; padding: 6px 8px; text-align: left; }
+  td { border: 1px solid #ccc; padding: 5px 8px; }
+  tr:nth-child(even) td { background: #eef3f9; }
+  .box { background: #eaf1f9; border-left: 4px solid #14406b; padding: 10px 14px; margin: 12px 0; }
+  .warn { background: #fdf3e3; border-left: 4px solid #d88c00; padding: 10px 14px; margin: 12px 0; }
+  .danger { background: #fdeaea; border-left: 4px solid #c0392b; padding: 10px 14px; margin: 12px 0; }
+  code, .cell { background: #eee; padding: 1px 5px; border-radius: 3px; font-family: Consolas, monospace; font-size: 10pt; }
+  .btn { background: #14406b; color: white; padding: 2px 8px; border-radius: 4px; font-size: 9.5pt; font-weight: bold; white-space: nowrap; }
+  li { margin: 3px 0; }
+  .footer { margin-top: 30px; color: #777; font-size: 9pt; border-top: 1px solid #ccc; padding-top: 8px; }
+  .pagebreak { page-break-before: always; }
+</style>
+</head>
+<body>
+
+<h1>Masaniello Roulette – Manuale dell'App</h1>
+<p class="sub">Guida all'uso dell'applicazione desktop · giugno 2026</p>
+
+<h2>1. Che cos'è</h2>
+<p>L'app applica la progressione <b>Masaniello</b> alla roulette europea con <b>due sistemi di
+copertura</b> a scelta, salva tutto in un database, riprende le sessioni interrotte e include un
+<b>MonteCarlo comparativo</b> per confrontare sistemi e parametri prima di giocarli.</p>
+
+<h2>2. Avvio e dati</h2>
+<ul>
+<li>Avvio: doppio click su <code>MasanielloApp\Avvia Masaniello.bat</code>.</li>
+<li>Tutti i dati (sessioni, colpi, impostazioni, simulazioni) sono nel file
+<code>MasanielloApp\publish\masaniello.db</code>. <b>Backup = copiare quel file.</b></li>
+<li>Se chiudi l'app con una sessione in corso, alla riapertura riprende esattamente da dove eri.</li>
+<li>Su un altro PC serve il runtime .NET (l'app segnala da sola il link per scaricarlo).</li>
+</ul>
+
+<h2>3. I due sistemi di puntata</h2>
+<table>
+<tr><th></th><th>Sistema 1 – Dozzine + Sestina</th><th>Sistema 2 – Quasi tutto</th></tr>
+<tr><td>Numeri coperti</td><td>30 su 37 (81,1% a colpo)</td><td>33 su 37 (89,2% a colpo)</td></tr>
+<tr><td>Copertura</td><td>1-24 + sestina (25-30 o 31-36)</td><td>1-24 + sestina 25-30 + terzina (31-33 o 34-36)</td></tr>
+<tr><td>Ripartizione</td><td>2 + 2 + 1 (5 chip minimi)</td><td>4 + 4 + 2 + 1 (11 chip minimi)</td></tr>
+<tr><td>Vincita a colpo</td><td>sempre +20%</td><td>sempre +9,09%</td></tr>
+<tr><td>Numeri scoperti</td><td>0 + la sestina opposta</td><td>0 + 3 numeri (es. 34-35-36)</td></tr>
+<tr><td>Carattere</td><td>vincite più ricche, più sconfitte</td><td>perde raramente il colpo, ma quando perde costa</td></tr>
+</table>
+
+<div class="box"><b>Come puntare al tavolo (Sistema 2, esempio con 11 chip da 1 €):</b><br>
+4 € su Dozzina 1 (1-12) · 4 € su Dozzina 2 (13-24) · 2 € sulla sestina 25-30 ·
+1 € sulla terzina 31-32-33 (un solo gettone sulla fila).<br>
+Qualunque numero coperto esca, incassi sempre 12 € → +1 €. L'app mostra comunque la
+ripartizione esatta di ogni puntata: basta copiarla.</div>
+
+<h2>4. Tab Config — da impostare per prima</h2>
+<table>
+<tr><th>Campo</th><th>Significato</th></tr>
+<tr><td>Bankroll iniziale (€)</td><td>la cassa di partenza (usata se il rollover è spento o non ci sono sessioni)</td></tr>
+<tr><td>Valore chip (€)</td><td>il gettone minimo del tavolo. <b>Più è piccolo rispetto alla cassa, meglio funziona il piano</b></td></tr>
+<tr><td>Rollover cassa</td><td>SI = ogni nuova sessione riparte dal bank finale dell'ultima chiusa</td></tr>
+<tr><td>Sestina (sistema 1)</td><td>25-30 oppure 31-36</td></tr>
+<tr><td>Terzina (sistema 2)</td><td>31-33 oppure 34-36</td></tr>
+</table>
+<p>Premi <span class="btn">SALVA</span> dopo ogni modifica.</p>
+
+<h3>Permanenze reali</h3>
+<p>Nel riquadro <b>Permanenze reali</b> puoi importare le sequenze di numeri usciti davvero
+in un casinò (le "permanenze" scaricabili da molti siti):</p>
+<ul>
+<li><span class="btn">CARICA PERMANENZA…</span> accetta file <code>.xls</code>, <code>.xlsx</code>,
+<code>.csv</code> e <code>.txt</code>. L'app trova da sola la colonna con i numeri (0-36) e
+ignora eventuali colonne contatore.</li>
+<li>Ogni permanenza ha un <b>cursore</b> che ricorda fino a che punto l'hai rigiocata in Sessione;
+<span class="btn">RIAVVOLGI</span> lo riporta all'inizio, <span class="btn">ELIMINA</span> la rimuove.</li>
+<li>Le permanenze caricate compaiono sia nel tab Sessione (replay colpo per colpo) sia nel
+tab MonteCarlo (backtest su dati veri).</li>
+</ul>
+
+<h2>5. Tab Sessione</h2>
+<ol>
+<li>Scegli <b>sistema</b>, <b>gestione</b> (vedi sotto), <b>colpi totali M</b>, <b>vittorie
+obiettivo W</b> (solo Masaniello classico) e <b>modalità rischio</b>
+(Prudente 3% · Intermedia 7% · Aggressiva 15% · <b>Ultra = Masaniello puro, ora il default</b>;
+le prime tre limitano la puntata a quella % della cassa).</li>
+<li>Premi <span class="btn">NUOVA SESSIONE</span>. Il pannello mostra cassa, <b>obiettivo della
+sessione in €</b> e la <b>prossima puntata con la ripartizione esatta</b> per segmento.</li>
+<li>Gioca al tavolo come indicato, poi scrivi il numero uscito e premi <span class="btn">AGGIUNGI</span>
+(o Invio). In alternativa <span class="btn">SIMULA RANDOM</span> estrae un numero casuale, oppure
+<span class="btn">PERMANENZA ▶</span> gioca il <b>prossimo numero reale</b> della permanenza scelta
+nella tendina (il cursore avanza e viene ricordato anche tra un riavvio e l'altro).</li>
+<li>La sessione si chiude da sola: <b>VINTA</b> o <b>PERSA</b> (colpi finiti,
+obiettivo irraggiungibile o cassa insufficiente). Tutto finisce nello Storico.</li>
+</ol>
+
+<h3>Le due gestioni di puntata</h3>
+<table>
+<tr><th></th><th>Masaniello classico</th><th>Recupero del picco</th></tr>
+<tr><td>Puntate</td><td>dalla tabella Masaniello (piano M/W)</td><td>sempre la <b>puntata minima</b> (5 o 11 chip)</td></tr>
+<tr><td>Dopo una vincita</td><td>segue il piano</td><td>si resta al minimo; il <b>picco di cassa</b> si aggiorna</td></tr>
+<tr><td>Dopo una perdita</td><td>segue il piano</td><td>parte un <b>mini-piano Masaniello</b> che riporta la cassa al picco entro K colpi (default 10)</td></tr>
+<tr><td>Parametri</td><td>M e W</td><td>M e K (W non serve)</td></tr>
+<tr><td>Fine sessione</td><td>W vittorie o piano morto</td><td>al colpo M (un recupero in corso può proseguire fino a M+K); VINTA se la cassa è ≥ a quella iniziale</td></tr>
+</table>
+<div class="box"><b>Come si comporta il Recupero del picco.</b> Finché vinci, incassi poco ma
+costante e il "picco" sale. Alla prima perdita l'app calcola il piano di recupero più leggero
+che può riportarti al picco in K colpi e mostra <code>RECUPERO → obiettivo (colpo x/K)</code>.
+Raggiunto il picco si torna subito al minimo. Se il recupero diventa matematicamente impossibile
+(o la cassa non copre la puntata) la sessione è PERSA. Nei backtest su dati reali questa
+gestione vince più spesso del classico e con perdite massime più piccole — ma il margine del
+banco (−2,70% del puntato) resta identico.</div>
+<div class="warn"><b>Avviso "⚠ minimo forzato".</b> Se accanto alla puntata compare l'avviso,
+il piano Masaniello sta chiedendo meno della puntata minima del sistema (5 o 11 chip): il minimo
+domina, non stai più seguendo il piano e paghi solo margine. Rimedio: chip più piccolo
+oppure W più ambizioso.</div>
+
+<h2>6. Tab Storico</h2>
+<p>Tutte le sessioni con esito, profitto e date; in alto il riepilogo (% vinte, profitto totale),
+sotto il <b>grafico dell'andamento della cassa</b>. Doppio click su una sessione per rivedere
+tutti i suoi colpi.</p>
+
+<h2 class="pagebreak">7. Tab MonteCarlo — il laboratorio</h2>
+<ol>
+<li>Scegli la <b>sorgente dei numeri</b>: <code>RANDOM</code> (numeri casuali, quante sessioni
+vuoi) oppure <code>PERMANENZA</code> (i numeri usciti davvero in un casinò, caricati dal tab
+Config — un'etichetta indica quante sessioni-blocco fornisce il file scelto).</li>
+<li>Imposta il numero di sessioni (default 10.000, solo RANDOM) e la modalità:
+<code>INDIPENDENTE</code> (ogni sessione riparte dal bankroll: statistiche pulite) o
+<code>ROLLOVER</code> (la cassa evolve; si vede se e quando si va in bancarotta).</li>
+<li>Nella griglia componi le <b>configurazioni da confrontare</b> (sistema, gestione, M, W, K,
+modalità); <span class="btn">+ Configurazione</span> per aggiungerne altre.</li>
+<li>Premi <span class="btn">AVVIA MONTECARLO</span>.</li>
+</ol>
+<p>Tutte le configurazioni rigiocano <b>le stesse identiche sequenze di numeri</b>: le differenze nei
+risultati dipendono solo dai parametri, non dalla fortuna. Con la PERMANENZA i numeri vengono
+divisi in blocchi uguali e ogni configurazione rigioca gli stessi blocchi (backtest equo su dati
+veri). Leggi: % sessioni vinte, profitto medio (quasi sempre negativo: è il margine del banco),
+perdita massima, drawdown, e il grafico delle distribuzioni (INDIPENDENTE) o delle curve di
+cassa (ROLLOVER).</p>
+<div class="warn"><b>Occhio ai backtest corti.</b> Una permanenza da ~2.000 colpi fornisce solo
+~67 sessioni da 30 colpi: una giornata fortunata può mostrare risultati irripetibili (es. +121%
+in ROLLOVER). Conferma sempre anche con il RANDOM su 10.000 sessioni — le frequenze delle
+permanenze reali combaciano col modello casuale, quindi il MonteCarlo è affidabile.</div>
+
+<h2>8. Scegliere M e W</h2>
+<p>L'obiettivo teorico della sessione dipende da M, W e dal sistema. Su 20 colpi:</p>
+<table>
+<tr><th>W su 20</th><th>Sistema 1 (+20% a colpo)</th><th>Sistema 2 (+9,09% a colpo)</th></tr>
+<tr><td>13</td><td>+1,14%</td><td>≈ 0%</td></tr>
+<tr><td>15</td><td>+11,34%</td><td>+0,47%</td></tr>
+<tr><td>16</td><td>+30,08%</td><td>+2,20%</td></tr>
+<tr><td>17</td><td>+76,51%</td><td>+8,65%</td></tr>
+<tr><td>18</td><td>+204,27%</td><td>+29,86%</td></tr>
+</table>
+<p>Regole pratiche:</p>
+<ul>
+<li>Col <b>Sistema 2</b> servono W molto alti (17-18 su 20) perché ogni vincita rende poco:
+è il prezzo della copertura quasi totale.</li>
+<li>Evita obiettivi sotto il +10%: il piano chiede puntate minuscole e finisce schiacciato
+dalla puntata minima (vedi avviso ⚠).</li>
+<li>Verifica <b>sempre</b> una combinazione nuova nel MonteCarlo prima di giocarla davvero.</li>
+</ul>
+
+<h2>9. Avvertenze importanti</h2>
+<div class="danger">
+<p><b>Nessun sistema batte la roulette.</b> Su ogni puntata il banco trattiene in media il
+<b>2,70%</b>, identico per entrambi i sistemi (è l'effetto dello zero e dei numeri scoperti).
+Il Masaniello dà disciplina e controllo del rischio: vinci spesso poco e raramente perdi tanto,
+ma il valore atteso resta negativo — il MonteCarlo te lo mostra senza filtri.</p>
+<p><b>Gioca solo denaro che puoi permetterti di perdere.</b> Se il gioco diventa un problema:
+Telefono Verde Nazionale per le problematiche legate al Gioco d'Azzardo <b>800 558 822</b>.</p>
+</div>
+
+<h2>10. Problemi comuni</h2>
+<table>
+<tr><th>Problema</th><th>Soluzione</th></tr>
+<tr><td>L'app non parte su un altro PC</td><td>Installare il runtime .NET dal link che l'app indica</td></tr>
+<tr><td>Voglio azzerare tutto</td><td>Chiudi l'app ed elimina (o rinomina) <code>publish\masaniello.db</code></td></tr>
+<tr><td>Voglio ripartire dal bankroll di Config</td><td>Config → Rollover = NO → Salva → Nuova sessione</td></tr>
+<tr><td>"Bankroll insufficiente"</td><td>La cassa non copre la puntata minima del sistema (5 o 11 chip): riduci il chip o aumenta il bankroll</td></tr>
+<tr><td>Il MonteCarlo segna BANCAROTTA</td><td>In modalità ROLLOVER la cassa simulata è scesa sotto la puntata minima: parametri troppo aggressivi</td></tr>
+</table>
+
+<p class="footer">Masaniello Roulette · Manuale App v2 · giugno 2026 · Solo per uso personale e ricreativo.</p>
+</body>
+</html>
