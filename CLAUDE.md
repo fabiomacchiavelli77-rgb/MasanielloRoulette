@@ -17,9 +17,9 @@ C:\Progetti AI\MasanielloRoulette\
 └── MasanielloApp\             soluzione .NET (C#, net10.0-windows)
     ├── Avvia Masaniello.bat   launcher (→ publish\Masaniello.App.exe)
     ├── Masaniello.Core\       libreria con TUTTA la logica (zero UI, riusabile)
-    │   ├── Engine\            MasanielloTable (tabella V, StakeFraction), StakeCalculator,
+    │   ├── Engine\            MasanielloTable (tabella V, StakeFraction), StakeCalculator, ScommesseEsatte,
     │   │                      PianoRecupero (W' minimo per tornare al picco in K colpi)
-    │   ├── Systems\           BettingSystem (ritorno costante) + Catalog (i 2 sistemi)
+    │   ├── Systems\           BettingSystem (ritorno costante) + Catalog (i 4 sistemi: S1 30/37, S2 33/37, S3 34/37 +pieno, S4 35/37 +2 pieni)
     │   ├── Sessions\          MotoreSessione (macchina a stati condivisa: live, ripresa
     │   │                      da DB e MonteCarlo), SessionService (rollover, replay)
     │   ├── Permanenze\        PermanenceLoader (xls/xlsx/csv/txt, ExcelDataReader,

@@ -13,6 +13,8 @@ public sealed class MainForm : Form
 {
     private const string NomeS1 = "Dozzine + Sestina (30 numeri, +20%)";
     private const string NomeS2 = "Quasi tutto (33 numeri, +9,09%)";
+    private const string NomeS3 = "Quasi tutto + 1 pieno (34 numeri, +5,88%)";
+    private const string NomeS4 = "Quasi tutto + 2 pieni (35 numeri, +2,86%)";
 
     private readonly Database _db;
     private readonly SessionService _svc;
@@ -22,6 +24,7 @@ public sealed class MainForm : Form
     private NumericUpDown _numM = null!, _numW = null!, _numK = null!;
     private Label _lblW = null!, _lblK = null!;
     private ComboBox _cmbModalita = null!;
+    private Label _lblEsatte = null!;
     private Label _lblStato = null!, _lblBank = null!, _lblColpi = null!, _lblVittorie = null!,
                   _lblObiettivo = null!, _lblPuntata = null!, _lblBreakdown = null!;
     private TextBox _txtNumero = null!;
@@ -46,7 +49,7 @@ public sealed class MainForm : Form
     // tab Config
     private TextBox _txtBank = null!, _txtChip = null!;
     private Label _lblInfoChip = null!;
-    private ComboBox _cmbRollover = null!, _cmbSestina = null!, _cmbTerzina = null!;
+    private ComboBox _cmbRollover = null!, _cmbSestina = null!, _cmbTerzina = null!, _cmbPieni = null!;
     private DataGridView _gridPermanenze = null!;
 
     /// <summary>Voce dei combo permanenza: mostra nome e posizione del cursore.</summary>
@@ -90,9 +93,40 @@ public sealed class MainForm : Form
     private static bool ProvaParseImporto(string testo, out decimal valore) =>
         decimal.TryParse(testo.Trim().Replace("€", ""), NumberStyles.Number, CultureInfo.CurrentCulture, out valore);
 
-    private BettingSystem SistemaSelezionato() => _cmbSistema.SelectedIndex == 1
-        ? Catalog.QuasiTutto((int)CfgDec("terzina", 31))
-        : Catalog.DozzineSestina((int)CfgDec("sestina", 25));
+    private BettingSystem SistemaSelezionato()
+    {
+        int terzina = (int)CfgDec("terzina", 31);
+        var (p1, p2) = PieniConfigurati();
+        return _cmbSistema.SelectedIndex switch
+        {
+            1 => Catalog.QuasiTutto(terzina),
+            2 => Catalog.PiuPieno(terzina, p1),
+            3 => Catalog.PiuPieni(terzina, p1, p2),
+            _ => Catalog.DozzineSestina((int)CfgDec("sestina", 25)),
+        };
+    }
+
+    /// <summary>Pieni sui residui della terza dozzina, da config ("34,35" di default).</summary>
+    private (int P1, int P2) PieniConfigurati()
+    {
+        var parti = Cfg("pieni", "34,35").Split(',');
+        int p1 = int.TryParse(parti[0].Trim(), out var a) ? a : 34;
+        int p2 = parti.Length > 1 && int.TryParse(parti[1].Trim(), out var b) ? b : 35;
+        return (p1, p2);
+    }
+
+    private (string Codice, int Parametro) SistemaCodiceEParametro()
+    {
+        int terzina = (int)CfgDec("terzina", 31);
+        var (p1, p2) = PieniConfigurati();
+        return _cmbSistema.SelectedIndex switch
+        {
+            1 => (Catalog.CodiceQuasiTutto, terzina),
+            2 => (Catalog.CodicePiuPieno, Catalog.CodificaParametro(terzina, p1)),
+            3 => (Catalog.CodicePiuPieni, Catalog.CodificaParametro(terzina, p1, p2)),
+            _ => (Catalog.CodiceDozzineSestina, (int)CfgDec("sestina", 25)),
+        };
+    }
 
     // ------------------------------------------------------------ tab Sessione
 
@@ -114,10 +148,11 @@ public sealed class MainForm : Form
         };
 
         // --- nuova sessione ---
-        var gbNuova = NuovoGroupBox("Nuova sessione", 340, 265);
+        var gbNuova = NuovoGroupBox("Nuova sessione", 340, 320);
         _cmbSistema = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 310, Left = 12, Top = 24 };
-        _cmbSistema.Items.AddRange(new object[] { NomeS1, NomeS2 });
+        _cmbSistema.Items.AddRange(new object[] { NomeS1, NomeS2, NomeS3, NomeS4 });
         _cmbSistema.SelectedIndex = 0;
+        _cmbSistema.SelectedIndexChanged += (_, _) => AggiornaEtichettaEsatte();
 
         var lblGes = NuovaEtichetta("Gestione:", 12, 58);
         _cmbGestione = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 152, Left = 170, Top = 56 };
@@ -139,9 +174,15 @@ public sealed class MainForm : Form
 
         var btnNuova = new Button { Text = "NUOVA SESSIONE", Width = 310, Height = 40, Left = 12, Top = 182 };
         btnNuova.Click += (_, _) => NuovaSessione();
+        var btnEsatta = new Button { Text = "USA ESATTA", Width = 150, Height = 26, Left = 12, Top = 226 };
+        btnEsatta.Click += (_, _) => ApplicaScommessaEsatta();
+        _lblEsatte = NuovaEtichetta("", 170, 230);
+        _lblEsatte.MaximumSize = new Size(180, 0);
         gbNuova.Controls.AddRange(new Control[] { _cmbSistema, lblGes, _cmbGestione, lblM, _numM,
-                                                  _lblW, _numW, _lblK, _numK, lblMod, _cmbModalita, btnNuova });
+                                                  _lblW, _numW, _lblK, _numK, lblMod, _cmbModalita, btnNuova,
+                                                  btnEsatta, _lblEsatte });
         AggiornaCampiGestione();
+        AggiornaEtichettaEsatte();
 
         // --- stato ---
         var gbStato = NuovoGroupBox("Stato sessione", 340, 150);
@@ -200,10 +241,9 @@ public sealed class MainForm : Form
     {
         try
         {
-            bool s2 = _cmbSistema.SelectedIndex == 1;
+            var (codice, parametro) = SistemaCodiceEParametro();
             var cfg = new NuovaSessioneConfig(
-                s2 ? Catalog.CodiceQuasiTutto : Catalog.CodiceDozzineSestina,
-                s2 ? (int)CfgDec("terzina", 31) : (int)CfgDec("sestina", 25),
+                codice, parametro,
                 (int)_numM.Value, (int)_numW.Value,
                 ModalitaRischioExt.Parse(_cmbModalita.Text),
                 CfgDec("chip", 1m), CfgDec("bank", 100m),
@@ -218,6 +258,45 @@ public sealed class MainForm : Form
         catch (Exception ex)
         {
             MessageBox.Show(ex.Message, "Nuova sessione", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+    }
+
+    /// <summary>Scommesse W/M più vicine a coperti/37 per il sistema selezionato.</summary>
+    private void AggiornaEtichettaEsatte()
+    {
+        try
+        {
+            var sys = SistemaSelezionato();
+            var parti = ScommesseEsatte.Suggerite(sys.NumeriCoperti)
+                .Select(s => $"{s.Tag} {s.W}/{s.M}");
+            _lblEsatte.Text = "Esatte: " + string.Join(" · ", parti);
+        }
+        catch
+        {
+            _lblEsatte.Text = "";
+        }
+    }
+
+    /// <summary>Applica la scommessa "media" (M ≤ 30) al Masaniello classico.</summary>
+    private void ApplicaScommessaEsatta()
+    {
+        if (_cmbGestione.SelectedIndex == 1)
+        {
+            MessageBox.Show("La scommessa esatta vale per il Masaniello classico, non per il recupero del picco.",
+                            "Scommessa esatta", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+        try
+        {
+            var sys = SistemaSelezionato();
+            var media = ScommesseEsatte.Suggerite(sys.NumeriCoperti).FirstOrDefault(s => s.Tag == "media");
+            if (media == null) return;
+            _numM.Value = Math.Min(media.M, _numM.Maximum);
+            _numW.Value = Math.Min(media.W, _numW.Maximum);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.Message, "Scommessa esatta", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
     }
 
@@ -381,7 +460,13 @@ public sealed class MainForm : Form
 
         foreach (var s in sessioni)
         {
-            string nomeSistema = s.Sistema == Catalog.CodiceQuasiTutto ? "Quasi tutto" : "Dozzine + Sestina";
+            string nomeSistema = s.Sistema switch
+            {
+                Catalog.CodiceQuasiTutto => "Quasi tutto",
+                Catalog.CodicePiuPieno => "S3 +pieno",
+                Catalog.CodicePiuPieni => "S4 +2 pieni",
+                _ => "Dozzine + Sestina",
+            };
             bool recupero = s.Gestione == GestionePuntataExt.CodiceRecuperoPicco;
             _gridSessioni.Rows.Add((int)s.Id, nomeSistema, recupero ? $"Recupero K{s.KRecupero}" : "Classico",
                 s.M, recupero ? "–" : s.W.ToString(), s.ModalitaRischio,
@@ -477,7 +562,7 @@ public sealed class MainForm : Form
 
         _gridMcConfig = NuovaGriglia(soloLettura: false);
         var colSis = new DataGridViewComboBoxColumn { HeaderText = "Sistema", Width = 240 };
-        colSis.Items.AddRange(NomeS1, NomeS2);
+        colSis.Items.AddRange(NomeS1, NomeS2, NomeS3, NomeS4);
         var colGes = new DataGridViewComboBoxColumn { HeaderText = "Gestione", Width = 130 };
         colGes.Items.AddRange("Masaniello", "Recupero picco");
         var colMod = new DataGridViewComboBoxColumn { HeaderText = "Modalità", Width = 110 };
@@ -516,7 +601,8 @@ public sealed class MainForm : Form
         {
             if (riga.IsNewRow) continue;
             string nomeSis = riga.Cells[0].Value?.ToString() ?? NomeS1;
-            bool s2 = nomeSis == NomeS2;
+            int idxSis = new[] { NomeS1, NomeS2, NomeS3, NomeS4 }.ToList().IndexOf(nomeSis);
+            if (idxSis < 0) idxSis = 0;
             bool recupero = riga.Cells[1].Value?.ToString() == "Recupero picco";
             int.TryParse(riga.Cells[3].Value?.ToString(), out int w);
             int.TryParse(riga.Cells[4].Value?.ToString(), out int k);
@@ -526,10 +612,17 @@ public sealed class MainForm : Form
                     ? $"Riga {riga.Index + 1}: M e K non validi (servono M > 0 e K > 0)."
                     : $"Riga {riga.Index + 1}: M e W non validi (serve 0 < W <= M).");
 
-            var sistema = s2 ? Catalog.QuasiTutto((int)CfgDec("terzina", 31))
-                             : Catalog.DozzineSestina((int)CfgDec("sestina", 25));
+            int terzina = (int)CfgDec("terzina", 31);
+            var (p1, p2) = PieniConfigurati();
+            var sistema = idxSis switch
+            {
+                1 => Catalog.QuasiTutto(terzina),
+                2 => Catalog.PiuPieno(terzina, p1),
+                3 => Catalog.PiuPieni(terzina, p1, p2),
+                _ => Catalog.DozzineSestina((int)CfgDec("sestina", 25)),
+            };
             var modalita = ModalitaRischioExt.Parse(riga.Cells[5].Value?.ToString() ?? "Ultra");
-            string sigla = s2 ? "S2" : "S1";
+            string sigla = $"S{idxSis + 1}";
             configs.Add(recupero
                 ? new McConfig($"{sigla} Rec M{m} K{k} {modalita}", sistema, m, 0, modalita,
                                GestionePuntata.RecuperoPicco, k)
@@ -725,8 +818,15 @@ public sealed class MainForm : Form
         _cmbTerzina = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 100, Left = 220, Top = 155 };
         _cmbTerzina.Items.AddRange(new object[] { "31-33", "34-36" });
         gb.Controls.Add(_cmbTerzina);
+        gb.Controls.Add(NuovaEtichetta("Pieni residui (S3/S4):", 12, 190));
+        _cmbPieni = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 188, Left = 220, Top = 187 };
+        _cmbPieni.Items.AddRange(new object[]
+        {
+            "34+35 (scoperti 0 e 36)", "34+36 (scoperti 0 e 35)", "35+36 (scoperti 0 e 34)",
+        });
+        gb.Controls.Add(_cmbPieni);
 
-        var btnSalva = new Button { Text = "SALVA", Width = 388, Height = 36, Left = 12, Top = 200 };
+        var btnSalva = new Button { Text = "SALVA", Width = 388, Height = 36, Left = 12, Top = 224 };
         btnSalva.Click += (_, _) => SalvaConfig();
         gb.Controls.Add(btnSalva);
 
@@ -841,6 +941,12 @@ public sealed class MainForm : Form
         _cmbRollover.SelectedIndex = Cfg("rollover", "SI") == "NO" ? 1 : 0;
         _cmbSestina.SelectedIndex = (int)CfgDec("sestina", 25) == 31 ? 1 : 0;
         _cmbTerzina.SelectedIndex = (int)CfgDec("terzina", 31) == 34 ? 1 : 0;
+        _cmbPieni.SelectedIndex = PieniConfigurati() switch
+        {
+            (34, 36) => 1,
+            (35, 36) => 2,
+            _ => 0,
+        };
         AggiornaInfoChip();
     }
 
@@ -852,7 +958,7 @@ public sealed class MainForm : Form
             _lblInfoChip.Text = "";
             return;
         }
-        _lblInfoChip.Text = $"Puntata minima: S1 {5 * chip:C} · S2 {11 * chip:C}";
+        _lblInfoChip.Text = $"Puntata minima: S1 {5 * chip:C} · S2 {11 * chip:C} · S3 {34 * chip:C} · S4 {35 * chip:C}";
     }
 
     private void SalvaConfig()
@@ -876,8 +982,15 @@ public sealed class MainForm : Form
         _db.SetConfig("rollover", _cmbRollover.SelectedIndex == 1 ? "NO" : "SI");
         _db.SetConfig("sestina", _cmbSestina.SelectedIndex == 1 ? "31" : "25");
         _db.SetConfig("terzina", _cmbTerzina.SelectedIndex == 1 ? "34" : "31");
+        _db.SetConfig("pieni", _cmbPieni.SelectedIndex switch
+        {
+            1 => "34,36",
+            2 => "35,36",
+            _ => "34,35",
+        });
 
         AggiornaPannelloSessione();
+        AggiornaEtichettaEsatte();
         MessageBox.Show("Impostazioni salvate.", "Config", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
